@@ -1,1 +1,21 @@
-<p>header works!</p>
+<header class="header">
+  <div class="header-container">
+    <div class="logo">
+      <h2>MoveIT</h2>
+    </div>
+    <nav class="nav-menu">
+      <a routerLink="/home" routerLinkActive="active">Home</a>
+      <a routerLink="/map" routerLinkActive="active">Map</a>
+      <a routerLink="/details" routerLinkActive="active">Details</a>
+    </nav>
+    <div class="nav-actions">
+      <div *ngIf="authService.isAuthenticated(); else loginButton" class="user-info">
+        <span class="user-email">{{ authService.getCurrentUserEmail() }}</span>
+        <button class="logout-btn" (click)="onLogout()">Logout</button>
+      </div>
+      <ng-template #loginButton>
+        <a routerLink="/login" routerLinkActive="active" class="login-btn">Login</a>
+      </ng-template>
+    </div>
+  </div>
+</header>
