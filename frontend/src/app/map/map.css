@@ -1,25 +1,53 @@
 .map-container {
-  height: calc(100vh - 60px);
+  height: 100vh;
   width: 100%;
-  overflow: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
 }
 
-.map-placeholder {
+/* HARTĂ */
+.map-view {
+  width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: white;
 }
 
-.map-placeholder h2 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
+/* FILTRARE */
+.category-filter {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 10;
+  background: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
-.map-placeholder p {
-  font-size: 1.2rem;
-  opacity: 0.9;
+.category-filter select {
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+/* DIRECȚII */
+.directions-panel {
+  position: absolute;
+  top: 90px;
+  right: 15px;
+  width: 260px;
+  max-height: 60vh;
+  overflow-y: auto;
+  z-index: 10;
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.directions-panel h3 {
+  margin-top: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.directions-panel ol {
+  padding-left: 20px;
 }

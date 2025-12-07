@@ -1,6 +1,31 @@
 <div class="map-container">
-  <div class="map-placeholder">
-    <h2>Map View</h2>
-    <p>Map content will be displayed here</p>
+
+  <!-- FILTRARE CATEGORII -->
+  <div class="category-filter">
+    <label>Filtrează după sport:</label>
+    <select [(ngModel)]="selectedCategory" (change)="filterByCategory(selectedCategory)">
+      <option value="">Toate</option>
+      <option *ngFor="let c of categories" [value]="c">
+        {{ c }}
+      </option>
+    </select>
   </div>
+
+  <!-- DIRECȚII -->
+  <div class="directions-panel">
+    <h3>Direcții</h3>
+
+    <p *ngIf="directions.length === 0">
+      Click pe hartă pentru a selecta două puncte.
+    </p>
+
+    <ol *ngIf="directions.length > 0">
+      <li *ngFor="let d of directions">
+        {{ d.text }} ({{ d.distance }} m)
+      </li>
+    </ol>
+  </div>
+
+  <!-- MAPA -->
+  <div #mapViewNode class="map-view"></div>
 </div>
