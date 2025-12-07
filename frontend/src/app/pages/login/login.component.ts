@@ -15,12 +15,18 @@ export class LoginComponent {
 
   constructor(private router: Router, private authService: AuthService) {}
 
-  onLogin() {
-    if (this.authService.login(this.email, this.password)) {
-      alert('Login successful! Welcome to MoveIT.');
-      this.router.navigate(['/home']);
-    } else {
-      alert('Invalid credentials. Please try:\nEmail: test@moveit.com\nPassword: password123');
+  async onLogin() {
+    try {
+      const success = await this.authService.login(this.email, this.password);
+      if (success) {
+        alert('Login successful! Welcome to MoveIT.');
+        this.router.navigate(['/home']);
+      } else {
+        alert('Invalid credentials. Please check your email and password.');
+      }
+    } catch (error) {
+      alert('An error occurred during login. Please try again.');
+      console.error('Login error:', error);
     }
   }
 }
