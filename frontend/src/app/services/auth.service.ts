@@ -1,38 +1,48 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { Auth, signInWithEmailAndPassword, signOut, User, onAuthStateChanged } from '@angular/fire/auth';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private testUser = {
-    email: 'abc',
-    password: 'abc'
-  };
+  private auth: Auth = inject(Auth);
+  private currentUser: User | null = null;
 
-  private authenticated = false;
-  private currentUserEmail: string | null = null;
-
-  constructor() { }
-
-  login(email: string, password: string): boolean {
-    if (email === this.testUser.email && password === this.testUser.password) {
-      this.authenticated = true;
-      this.currentUserEmail = email;
-      return true;
-    }
-    return false;
+  constructor() {
+    onAuthStateChanged(this.auth, (user) => {
+      this.currentUser = user;
+    });
   }
 
-  logout(): void {
-    this.authenticated = false;
-    this.currentUserEmail = null;
+  async login(email: string, password: string): Promise<boolean> {
+    try {
+      const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
+      this.currentUser = userCredential.user;
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
+  }
+
+  async logout(): Promise<void> {
+    try {
+      await signOut(this.auth);
+      this.currentUser = null;
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   }
 
   isAuthenticated(): boolean {
-    return this.authenticated;
+    return this.currentUser !== null;
   }
 
   getCurrentUserEmail(): string | null {
-    return this.currentUserEmail;
+    return this.currentUser?.email || null;
+  }
+
+  getCurrentUser(): User | null {
+    return this.currentUser;
   }
 }
