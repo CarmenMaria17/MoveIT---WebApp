@@ -29,6 +29,8 @@ export class Map implements OnInit, OnDestroy {
   @ViewChild('mapViewNode', { static: true }) mapViewEl!: ElementRef;
   view!: MapView;
 
+  stopGraphics: Graphic[] = [];
+  routeGraphic: Graphic | null = null;
   directions: { text: string; distance: number }[] = [];
 
   categories: string[] = [
@@ -76,26 +78,22 @@ export class Map implements OnInit, OnDestroy {
   handleMapClick(event: any): void {
     if (!this.view) return;
 
-    const graphics = this.view.graphics.toArray();
-
-    if (graphics.length === 0) {
+    // When already have two stops, start a new selection with the latest click.
+    if (this.stopGraphics.length >= 2) {
+      this.resetStopsAndRoute();
       this.addStop("origin", event.mapPoint);
       return;
     }
 
-    if (graphics.length === 1) {
-      this.addStop("destination", event.mapPoint);
-      this.calculateRoute();
-      return;
-    }
-
-    // Reset
-    this.view.graphics.removeAll();
-    this.directions = [];
-    this.addStop("origin", event.mapPoint);
+    const stopType = this.stopGraphics.length === 0 ? "origin" : "destination";
+    this.addStop(stopType, event.mapPoint);
   }
 
   addStop(type: string, point: any): void {
+    // Any new stop invalidates a previously drawn route.
+    this.clearRouteGraphic();
+    this.directions = [];
+
     const symbol = new SimpleMarkerSymbol({
       color: type === "origin" ? "white" : "black",
       size: "10px",
@@ -107,19 +105,37 @@ export class Map implements OnInit, OnDestroy {
       symbol
     });
 
+    this.stopGraphics.push(graphic);
     this.view.graphics.add(graphic);
+  }
+
+  clearRouteGraphic(): void {
+    if (this.routeGraphic && this.view) {
+      this.view.graphics.remove(this.routeGraphic);
+    }
+    this.routeGraphic = null;
+  }
+
+  resetStopsAndRoute(): void {
+    if (this.view && this.stopGraphics.length) {
+      this.view.graphics.removeMany(this.stopGraphics);
+    }
+    this.stopGraphics = [];
+    this.directions = [];
+    this.clearRouteGraphic();
   }
 
   async calculateRoute(): Promise<void> {
     const routeUrl =
       "https://route-api.arcgis.com/arcgis/rest/services/World/Route/NAServer/Route_World";
 
-    const graphics = this.view.graphics.toArray();
-    if (graphics.length < 2) return;
+    if (this.stopGraphics.length < 2) return;
+
+    this.clearRouteGraphic();
 
     const params = new RouteParameters({
       stops: new FeatureSet({
-        features: graphics
+        features: this.stopGraphics
       }),
       returnDirections: true
     });
@@ -140,6 +156,7 @@ export class Map implements OnInit, OnDestroy {
       });
 
       this.view.graphics.add(r.route);
+      this.routeGraphic = r.route;
 
       // Extract directions
       const steps = r.directions.features;
