@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth, signInWithEmailAndPassword, signOut, User, onAuthStateChanged } from '@angular/fire/auth';
+import { Auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User, onAuthStateChanged, updateProfile } from '@angular/fire/auth';
 
 @Injectable({
   providedIn: 'root'
@@ -22,6 +22,33 @@ export class AuthService {
     } catch (error) {
       console.error('Login error:', error);
       return false;
+    }
+  }
+
+  async register(name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
+      this.currentUser = userCredential.user;
+      
+      // Update the user's display name
+      if (this.currentUser) {
+        await updateProfile(this.currentUser, { displayName: name });
+      }
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      let errorMessage = 'An error occurred during registration. Please try again.';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please use a different email.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please use a stronger password.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address. Please enter a valid email.';
+      }
+      
+      return { success: false, error: errorMessage };
     }
   }
 

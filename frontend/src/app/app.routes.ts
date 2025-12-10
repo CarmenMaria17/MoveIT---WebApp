@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home.component';
 import { LoginComponent } from './pages/login/login.component';
+import { RegisterComponent } from './pages/register/register.component';
 import { Map } from './map/map';
 import { AccountComponent } from './pages/account/account.component';
 
@@ -13,6 +14,9 @@ export const routes: Routes = [
 
   // Ruta pentru Login
   { path: 'login', component: LoginComponent },
+
+  // Ruta pentru Register
+  { path: 'register', component: RegisterComponent },
 
   // Ruta pentru Map
   { path: 'map', component: Map },

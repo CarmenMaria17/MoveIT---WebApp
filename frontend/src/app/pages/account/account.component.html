@@ -1,21 +1,215 @@
 <div class="account-container">
-  <div class="card">
-    <h2>Account</h2>
-    <p class="subtitle">Manage your MoveIT account</p>
+  <ng-container *ngIf="authService.isAuthenticated(); else guestState">
+    <!-- Header Container -->
+    <div class="header-container">
+      <div class="header-content">
+        <div>
+          <h2>Account</h2>
+          <p class="subtitle">Manage your MoveIT account</p>
+        </div>
+        <div class="info-row">
+          <span class="label">Email</span>
+          <span class="value">{{ authService.getCurrentUserEmail() }}</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">Logout</button>
+      </div>
+    </div>
 
-    <ng-container *ngIf="authService.isAuthenticated(); else guestState">
-      <div class="info-row">
-        <span class="label">Email</span>
-        <span class="value">{{ authService.getCurrentUserEmail() }}</span>
+    <!-- Main Content Layout: Favorites Left, Calendar Center -->
+    <div class="main-content-layout">
+      <!-- Favorites Section - Left -->
+      <div class="favorites-container">
+        <div class="favorites-section">
+          <div class="section-header">
+            <h3>My Favorite Centers</h3>
+          </div>
+
+          <div *ngIf="loadingFavorites" class="loading">Loading favorites...</div>
+
+          <div *ngIf="!loadingFavorites && favoriteCenters.length === 0" class="no-favorites">
+            <p>You don't have any favorite centers yet.</p>
+            <a routerLink="/home" class="link-btn">Browse Centers</a>
+          </div>
+
+          <div *ngIf="!loadingFavorites && favoriteCenters.length > 0" class="favorites-list">
+            <div *ngFor="let favorite of favoriteCenters" class="favorite-card">
+              <div class="favorite-info">
+                <h4>{{ favorite.center.name || 'Unnamed Center' }}</h4>
+                <p class="category" *ngIf="favorite.center.category">
+                  {{ favorite.center.category }}
+                </p>
+                <p class="address" *ngIf="favorite.center.address">
+                  {{ favorite.center.address }}
+                </p>
+              </div>
+              <div class="favorite-actions">
+                <button 
+                  class="remove-favorite-btn" 
+                  (click)="removeFavorite(favorite.centerId)"
+                  title="Remove from favorites">
+                  ♥
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <button class="primary" (click)="logout()">Logout</button>
-    </ng-container>
+      <!-- Calendar Section - Center -->
+      <div class="calendar-container-wrapper">
+        <div class="calendar-section">
+          <div class="section-header">
+            <h3>My Reservations</h3>
+            <div class="view-toggle">
+              <button 
+                class="toggle-btn" 
+                [class.active]="viewMode === 'list'"
+                (click)="viewMode = 'list'">
+                List
+              </button>
+              <button 
+                class="toggle-btn" 
+                [class.active]="viewMode === 'calendar'"
+                (click)="viewMode = 'calendar'">
+                Calendar
+              </button>
+            </div>
+          </div>
 
-    <ng-template #guestState>
+          <div *ngIf="loading" class="loading">Loading reservations...</div>
+
+          <!-- List View -->
+          <div *ngIf="!loading && viewMode === 'list'" class="reservations-list">
+            <div *ngIf="reservations.length === 0" class="no-reservations">
+              <p>You don't have any reservations yet.</p>
+              <a routerLink="/home" class="link-btn">Browse Centers</a>
+            </div>
+            
+            <div *ngFor="let reservation of reservations" class="reservation-card">
+              <div class="reservation-info">
+                <h4>{{ reservation.centerName }}</h4>
+                <div class="reservation-details">
+                  <span class="date-badge">
+                    📅 {{ reservation.date }}
+                  </span>
+                  <span class="time-badge">
+                    🕐 {{ reservation.hour }}
+                  </span>
+                  <span class="status-badge" [ngClass]="getStatusClass(reservation.status)">
+                    {{ reservation.status }}
+                  </span>
+                </div>
+              </div>
+              <div class="reservation-actions" *ngIf="canCancel(reservation)">
+                <button class="cancel-btn" (click)="openCancelConfirm(reservation)">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calendar View -->
+          <div *ngIf="!loading && viewMode === 'calendar'" class="calendar-view">
+            <div *ngIf="reservations.length === 0" class="no-reservations">
+              <p>You don't have any reservations yet.</p>
+              <a routerLink="/home" class="link-btn">Browse Centers</a>
+            </div>
+
+            <div *ngIf="reservations.length > 0" class="calendar-container">
+              <div class="calendar-header">
+                <button class="nav-btn" (click)="previousMonth()">‹</button>
+                <h4>{{ selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) }}</h4>
+                <button class="nav-btn" (click)="nextMonth()">›</button>
+              </div>
+              
+              <div class="calendar-grid">
+                <div class="calendar-weekday">Sun</div>
+                <div class="calendar-weekday">Mon</div>
+                <div class="calendar-weekday">Tue</div>
+                <div class="calendar-weekday">Wed</div>
+                <div class="calendar-weekday">Thu</div>
+                <div class="calendar-weekday">Fri</div>
+                <div class="calendar-weekday">Sat</div>
+                
+                <ng-container *ngFor="let day of getCalendarDays()">
+                  <div 
+                    class="calendar-day"
+                    [class.other-month]="day.getMonth() !== selectedMonth.getMonth()"
+                    [class.today]="isToday(day)"
+                    [class.has-reservation]="getReservationsForDate(formatDate(day)).length > 0"
+                    [class.past-date]="isPastDate(day) && day.getMonth() === selectedMonth.getMonth()">
+                    <div class="day-number">{{ day.getDate() }}</div>
+                    <div class="reservation-dots">
+                      <span 
+                        *ngFor="let reservation of getReservationsForDate(formatDate(day))"
+                        class="reservation-dot"
+                        [title]="reservation.centerName + ' at ' + reservation.hour">
+                      </span>
+                    </div>
+                  </div>
+                </ng-container>
+              </div>
+
+              <!-- Reservation Details for Selected Month -->
+              <div class="month-reservations">
+                <h5>Reservations in {{ selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) }}</h5>
+                <div class="reservations-list">
+                  <div 
+                    *ngFor="let reservation of getReservationsForSelectedMonth()" 
+                    class="reservation-card small"
+                    [class.past]="isReservationPast(reservation.date)">
+                    <div class="reservation-info">
+                      <h4>{{ reservation.centerName }}</h4>
+                      <div class="reservation-details">
+                        <span class="date-badge">📅 {{ reservation.date }}</span>
+                        <span class="time-badge">🕐 {{ reservation.hour }}</span>
+                        <span class="status-badge" [ngClass]="getStatusClass(reservation.status)">
+                          {{ reservation.status }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="reservation-actions" *ngIf="canCancel(reservation)">
+                      <button class="cancel-btn small" (click)="openCancelConfirm(reservation)">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                  <div *ngIf="getReservationsForSelectedMonth().length === 0" class="no-reservations">
+                    <p>No reservations for this month.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #guestState>
+    <div class="guest-container">
       <p class="muted">You are not logged in.</p>
       <a class="primary link-btn" routerLink="/login">Go to Login</a>
-    </ng-template>
+    </div>
+  </ng-template>
+
+  <!-- Cancel Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showCancelConfirm" (click)="closeCancelConfirm()">
+    <div class="confirm-modal" (click)="$event.stopPropagation()">
+      <h3>Cancel Reservation</h3>
+      <p *ngIf="reservationToCancel">
+        Are you sure you want to cancel your reservation at <strong>{{ reservationToCancel.centerName }}</strong> 
+        on <strong>{{ reservationToCancel.date }}</strong> at <strong>{{ reservationToCancel.hour }}</strong>?
+      </p>
+      <p class="warning-text">This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeCancelConfirm()" [disabled]="loading">
+          No, Keep It
+        </button>
+        <button class="btn-danger" (click)="confirmCancel()" [disabled]="loading">
+          {{ loading ? 'Cancelling...' : 'Yes, Cancel' }}
+        </button>
+      </div>
+    </div>
   </div>
 </div>
-
