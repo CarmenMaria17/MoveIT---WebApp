@@ -1,0 +1,111 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onClose()">
+  <div class="modal-content" (click)="$event.stopPropagation()" [class.loading-state]="loading">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h2>Sports Centers</h2>
+      <button class="close-btn" (click)="onClose()">&times;</button>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-container">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+        placeholder="Search centers by name, category, or address..."
+        class="search-input"
+      />
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading">Loading...</div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage && !showReservationForm" class="error-message">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Centers List -->
+    <div *ngIf="!showReservationForm && !loading" class="centers-list">
+      <div *ngIf="filteredCenters.length === 0" class="no-results">
+        No centers found
+      </div>
+      
+      <div *ngFor="let center of filteredCenters" class="center-card">
+        <div class="center-info">
+          <h3>{{ center.name || 'Unnamed Center' }}</h3>
+          <p class="category" *ngIf="center.category">
+            <strong>Category:</strong> {{ center.category }}
+          </p>
+          <p class="address" *ngIf="center.address">
+            <strong>Address:</strong> {{ center.address }}
+          </p>
+        </div>
+        
+        <div class="center-actions">
+          <button
+            *ngIf="authService.isAuthenticated()"
+            class="favorite-btn"
+            [class.favorited]="isFavorite(center.objectId)"
+            (click)="toggleFavorite(center)"
+            [title]="isFavorite(center.objectId) ? 'Remove from favorites' : 'Add to favorites'"
+          >
+            ♥
+          </button>
+          <button
+            class="reserve-btn"
+            (click)="openReservationForm(center)"
+          >
+            Make Reservation
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reservation Form -->
+    <div *ngIf="showReservationForm" class="reservation-form">
+      <h3>Make a Reservation</h3>
+      <div class="form-group">
+        <label>Center:</label>
+        <p class="center-name">{{ selectedCenter?.name || 'Unnamed Center' }}</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="reservationDate">Date:</label>
+        <input
+          type="date"
+          id="reservationDate"
+          [(ngModel)]="reservationDate"
+          [min]="getMinDate()"
+          required
+        />
+      </div>
+      
+      <div class="form-group">
+        <label for="reservationHour">Hour:</label>
+        <select
+          id="reservationHour"
+          [(ngModel)]="reservationHour"
+          required
+        >
+          <option value="">Select an hour</option>
+          <option *ngFor="let hour of availableHours" [value]="hour">
+            {{ hour }}
+          </option>
+        </select>
+      </div>
+      
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+      
+      <div class="form-actions">
+        <button class="btn-secondary" (click)="closeReservationForm()">Cancel</button>
+        <button class="btn-primary" (click)="submitReservation()" [disabled]="loading">
+          {{ loading ? 'Creating...' : 'Create Reservation' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -2,5 +2,15 @@
   <div class="hero-section">
     <h1>Welcome to MoveIT</h1>
     <p> Find your sports gym in a breeze!</p>
+    <div class="cta-buttons">
+      <button class="btn btn-primary" (click)="openCentersModal()">
+        Browse Sports Centers
+      </button>
+    </div>
   </div>
 </div>
+
+<app-centers-modal 
+  [isOpen]="showCentersModal" 
+  (closeModal)="closeCentersModal()">
+</app-centers-modal>

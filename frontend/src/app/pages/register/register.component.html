@@ -1,0 +1,71 @@
+<div class="register-container">
+  <div class="register-card">
+    <h2>Create Account</h2>
+    <p class="subtitle">Sign up to join MoveIT</p>
+
+    <form class="register-form" (ngSubmit)="onRegister()">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          [(ngModel)]="name"
+          placeholder="Enter your full name"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          [(ngModel)]="email"
+          placeholder="Enter your email"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          [(ngModel)]="password"
+          placeholder="Enter your password"
+          required
+          minlength="6"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          [(ngModel)]="confirmPassword"
+          placeholder="Confirm your password"
+          required
+          (blur)="validatePasswords()"
+        />
+        <div *ngIf="passwordMismatch" class="error-message">
+          Passwords do not match
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-register">Register</button>
+    </form>
+
+    <div class="register-footer">
+      <p>
+        Already have an account? 
+        <a routerLink="/login">Login here</a>
+      </p>
+    </div>
+  </div>
+</div>
+
