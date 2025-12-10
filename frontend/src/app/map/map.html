@@ -15,8 +15,24 @@
   <div class="directions-panel">
     <h3>Direcții</h3>
 
-    <p *ngIf="directions.length === 0">
-      Click pe hartă pentru a selecta două puncte.
+    <div class="directions-actions">
+      <button
+        type="button"
+        (click)="calculateRoute()"
+        [disabled]="stopGraphics.length < 2">
+        Pornește ruta
+      </button>
+      <button
+        type="button"
+        class="secondary"
+        (click)="resetStopsAndRoute()"
+        [disabled]="stopGraphics.length === 0">
+        Resetează selecția
+      </button>
+    </div>
+
+    <p *ngIf="stopGraphics.length < 2">
+      Selectează două puncte pe hartă pentru a putea începe ruta.
     </p>
 
     <ol *ngIf="directions.length > 0">
