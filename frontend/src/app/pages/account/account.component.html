@@ -1,0 +1,21 @@
+<div class="account-container">
+  <div class="card">
+    <h2>Account</h2>
+    <p class="subtitle">Manage your MoveIT account</p>
+
+    <ng-container *ngIf="authService.isAuthenticated(); else guestState">
+      <div class="info-row">
+        <span class="label">Email</span>
+        <span class="value">{{ authService.getCurrentUserEmail() }}</span>
+      </div>
+
+      <button class="primary" (click)="logout()">Logout</button>
+    </ng-container>
+
+    <ng-template #guestState>
+      <p class="muted">You are not logged in.</p>
+      <a class="primary link-btn" routerLink="/login">Go to Login</a>
+    </ng-template>
+  </div>
+</div>
+

@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home.component';
 import { LoginComponent } from './pages/login/login.component';
 import { Map } from './map/map';
+import { AccountComponent } from './pages/account/account.component';
 
 export const routes: Routes = [
   // Ruta implicită: redirecționează calea goală către 'home'
@@ -15,6 +16,9 @@ export const routes: Routes = [
 
   // Ruta pentru Map
   { path: 'map', component: Map },
+
+  // Ruta pentru Account
+  { path: 'account', component: AccountComponent },
 
   // Opțional: Ruta pentru pagini 404
   // { path: '**', component: NotFoundComponent },
