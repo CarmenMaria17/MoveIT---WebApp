@@ -11,7 +11,116 @@
     </select>
   </div>
 
-  <!-- DIRECȚII -->
+  <!-- BROWSE SPORT CENTERS -->
+  <div class="centers-panel">
+    <!-- Title and Search - only show when not in reservation form -->
+    <div *ngIf="!showReservationForm">
+      <h3>Sport Centers</h3>
+
+      <!-- Search Bar -->
+      <div class="search-container">
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()"
+          placeholder="Search centers..."
+          class="search-input"
+        />
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading">Loading...</div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage && !showReservationForm" class="error-message">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Centers List -->
+    <div *ngIf="!showReservationForm && !loading" class="centers-list">
+      <div *ngIf="filteredCenters.length === 0" class="no-results">
+        No centers found
+      </div>
+
+      <div *ngFor="let center of filteredCenters" class="center-card">
+        <div class="center-info">
+          <h4>{{ center.name || 'Unnamed Center' }}</h4>
+          <p class="category" *ngIf="center.category">
+            {{ center.category }}
+          </p>
+          <p class="address" *ngIf="center.address">
+            {{ center.address }}
+          </p>
+        </div>
+
+        <div class="center-actions">
+          <button
+            *ngIf="authService.isAuthenticated()"
+            class="favorite-btn"
+            [class.favorited]="isFavorite(center.objectId)"
+            (click)="toggleFavorite(center)"
+            [title]="isFavorite(center.objectId) ? 'Remove from favorites' : 'Add to favorites'"
+          >
+            ♥
+          </button>
+          <button
+            class="reserve-btn"
+            (click)="openReservationForm(center)"
+          >
+            Reserve
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reservation Form -->
+    <div *ngIf="showReservationForm" class="reservation-form">
+      <h4>Make a Reservation</h4>
+      <div class="form-group">
+        <label>Center:</label>
+        <p class="center-name">{{ selectedCenter?.name || 'Unnamed Center' }}</p>
+      </div>
+
+      <div class="form-group">
+        <label for="reservationDate">Date:</label>
+        <input
+          type="date"
+          id="reservationDate"
+          [(ngModel)]="reservationDate"
+          [min]="getMinDate()"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="reservationHour">Hour:</label>
+        <select
+          id="reservationHour"
+          [(ngModel)]="reservationHour"
+          required
+        >
+          <option value="">Select an hour</option>
+          <option *ngFor="let hour of availableHours" [value]="hour">
+            {{ hour }}
+          </option>
+        </select>
+      </div>
+
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-secondary" (click)="closeReservationForm()">Cancel</button>
+        <button class="btn-primary" (click)="submitReservation()" [disabled]="loading">
+          {{ loading ? 'Creating...' : 'Create' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIRECȚII - moved to bottom left -->
   <div class="directions-panel">
     <h3>Direcții</h3>
 

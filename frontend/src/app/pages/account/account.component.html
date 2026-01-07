@@ -8,7 +8,7 @@
           <p class="subtitle">Manage your MoveIT account</p>
         </div>
         <div class="info-row">
-          <span class="label">Email</span>
+          <span class="label">Email:</span>
           <span class="value">{{ authService.getCurrentUserEmail() }}</span>
         </div>
         <button class="logout-btn" (click)="logout()">Logout</button>
@@ -28,7 +28,7 @@
 
           <div *ngIf="!loadingFavorites && favoriteCenters.length === 0" class="no-favorites">
             <p>You don't have any favorite centers yet.</p>
-            <a routerLink="/home" class="link-btn">Browse Centers</a>
+            <a routerLink="/map" class="link-btn">Browse Centers</a>
           </div>
 
           <div *ngIf="!loadingFavorites && favoriteCenters.length > 0" class="favorites-list">
@@ -82,7 +82,7 @@
           <div *ngIf="!loading && viewMode === 'list'" class="reservations-list">
             <div *ngIf="reservations.length === 0" class="no-reservations">
               <p>You don't have any reservations yet.</p>
-              <a routerLink="/home" class="link-btn">Browse Centers</a>
+              <a routerLink="/map" class="link-btn">Browse Centers</a>
             </div>
             
             <div *ngFor="let reservation of reservations" class="reservation-card">
@@ -112,7 +112,7 @@
           <div *ngIf="!loading && viewMode === 'calendar'" class="calendar-view">
             <div *ngIf="reservations.length === 0" class="no-reservations">
               <p>You don't have any reservations yet.</p>
-              <a routerLink="/home" class="link-btn">Browse Centers</a>
+              <a routerLink="/map" class="link-btn">Browse Centers</a>
             </div>
 
             <div *ngIf="reservations.length > 0" class="calendar-container">

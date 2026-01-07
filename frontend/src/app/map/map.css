@@ -15,25 +15,264 @@
   position: absolute;
   top: 15px;
   right: 15px;
+  width: 320px;
   z-index: 10;
   background: white;
   padding: 10px 14px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-sizing: border-box;
 }
 
 .category-filter select {
+  width: 100%;
   padding: 6px 10px;
   border-radius: 4px;
 }
 
-/* DIRECȚII */
-.directions-panel {
+/* BROWSE SPORT CENTERS PANEL */
+.centers-panel {
   position: absolute;
   top: 90px;
   right: 15px;
+  width: 320px;
+  max-height: 70vh;
+  overflow-y: auto;
+  z-index: 10;
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.centers-panel h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.search-container {
+  margin-bottom: 12px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border-color 0.3s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.centers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.center-card {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s;
+}
+
+.center-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.center-info h4 {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.center-info p {
+  margin: 4px 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.center-info .category {
+  font-weight: 600;
+  color: #667eea;
+}
+
+.center-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.favorite-btn {
+  background: none;
+  border: 2px solid #e0e0e0;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #999;
+}
+
+.favorite-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.favorite-btn.favorited {
+  background: #ff6b6b;
+  border-color: #ff6b6b;
+  color: white;
+}
+
+.reserve-btn {
+  flex: 1;
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reserve-btn:hover {
+  background: #5568d3;
+  transform: translateY(-1px);
+}
+
+.reservation-form {
+  padding: 0;
+}
+
+.reservation-form h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.center-name {
+  font-size: 0.95rem;
+  color: #667eea;
+  font-weight: 600;
+  margin: 0;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-primary,
+.btn-secondary {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.no-results {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  border: 1px solid #fcc;
+}
+
+/* DIRECȚII - moved to bottom left */
+.directions-panel {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
   width: 260px;
-  max-height: 60vh;
+  max-height: 50vh;
   overflow-y: auto;
   z-index: 10;
   background: white;
