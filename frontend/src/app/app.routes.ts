@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './pages/home/home.component';
 import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
-import { Map } from './map/map';
+import { MapComponent } from './map/map';
 import { AccountComponent } from './pages/account/account.component';
 
 export const routes: Routes = [
@@ -19,7 +19,7 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
 
   // Ruta pentru Map
-  { path: 'map', component: Map },
+  { path: 'map', component: MapComponent },
 
   // Ruta pentru Account
   { path: 'account', component: AccountComponent },
