@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ReservationsService } from '../../services/reservations.service';
@@ -24,7 +25,7 @@ interface FavoriteCenter {
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './account.component.html',
   styleUrl: './account.component.css'
 })
@@ -38,13 +39,26 @@ export class AccountComponent implements OnInit {
   showCancelConfirm: boolean = false;
   reservationToCancel: ReservationWithCenter | null = null;
 
+  // Reservation modal for favorites
+  showReservationModal: boolean = false;
+  selectedCenterForReservation: Center | null = null;
+  reservationDate: string = '';
+  reservationHour: string = '';
+  availableHours: string[] = [];
+  reservationError: string = '';
+
   constructor(
     public authService: AuthService,
     private router: Router,
     private reservationsService: ReservationsService,
     private centersService: CentersService,
     private favoritesService: FavoritesService
-  ) {}
+  ) {
+    // Generate hours from 09:00 to 21:00
+    for (let hour = 9; hour <= 21; hour++) {
+      this.availableHours.push(`${hour.toString().padStart(2, '0')}:00`);
+    }
+  }
 
   async ngOnInit() {
     if (this.authService.isAuthenticated()) {
@@ -60,25 +74,32 @@ export class AccountComponent implements OnInit {
     try {
       const rawReservations = await this.reservationsService.getUserReservations();
       const centers = await this.centersService.getCenters();
-      
-      // Map reservations with center names
-      this.reservations = rawReservations.map((res: any) => {
-        const center = centers.find(c => String(c.objectId) === String(res.centerId));
-        return {
-          id: res.id,
-          centerId: res.centerId,
-          centerName: center?.name || `Center ${res.centerId}`,
-          date: res.date,
-          hour: res.hour,
-          status: res.status || 'pending',
-          createdAt: res.createdAt
-        };
-      }).sort((a, b) => {
-        // Sort by date, then by hour
-        const dateCompare = a.date.localeCompare(b.date);
-        if (dateCompare !== 0) return dateCompare;
-        return a.hour.localeCompare(b.hour);
-      });
+
+      // Map reservations with center names and filter out cancelled ones
+      this.reservations = rawReservations
+        .filter((res: any) => res.status !== 'cancelled') // Filter out cancelled reservations
+        .map((res: any) => {
+          const center = centers.find(c => String(c.objectId) === String(res.centerId));
+          // Auto-update status to completed if the reservation is in the past
+          let status = res.status || 'pending';
+          if (this.isReservationPast(res.date)) {
+            status = 'completed';
+          }
+          return {
+            id: res.id,
+            centerId: res.centerId,
+            centerName: center?.name || `Center ${res.centerId}`,
+            date: res.date,
+            hour: res.hour,
+            status: status,
+            createdAt: res.createdAt
+          };
+        }).sort((a, b) => {
+          // Sort by date, then by hour
+          const dateCompare = a.date.localeCompare(b.date);
+          if (dateCompare !== 0) return dateCompare;
+          return a.hour.localeCompare(b.hour);
+        });
     } catch (error) {
       console.error('Error loading reservations:', error);
     } finally {
@@ -103,12 +124,22 @@ export class AccountComponent implements OnInit {
     return this.reservations.filter(r => r.date === date);
   }
 
+  getCurrentReservations(): ReservationWithCenter[] {
+    return this.reservations.filter(r => !this.isReservationPast(r.date));
+  }
+
+  getPastReservations(): ReservationWithCenter[] {
+    return this.reservations.filter(r => this.isReservationPast(r.date));
+  }
+
   getReservationsForSelectedMonth(): ReservationWithCenter[] {
     const year = this.selectedMonth.getFullYear();
     const month = this.selectedMonth.getMonth();
-    
+
     return this.reservations.filter(r => {
-      const reservationDate = new Date(r.date);
+      // Parse date string manually to avoid timezone issues
+      const [y, m, d] = r.date.split('-').map(Number);
+      const reservationDate = new Date(y, m - 1, d);
       return reservationDate.getFullYear() === year && reservationDate.getMonth() === month;
     });
   }
@@ -145,7 +176,11 @@ export class AccountComponent implements OnInit {
   }
 
   formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+    // Format date in local timezone to avoid UTC conversion issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   isToday(date: Date): boolean {
@@ -164,7 +199,9 @@ export class AccountComponent implements OnInit {
   isReservationPast(dateString: string): boolean {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const reservationDate = new Date(dateString);
+    // Parse date string manually to avoid timezone issues
+    const [y, m, d] = dateString.split('-').map(Number);
+    const reservationDate = new Date(y, m - 1, d);
     reservationDate.setHours(0, 0, 0, 0);
     return reservationDate < today;
   }
@@ -177,6 +214,8 @@ export class AccountComponent implements OnInit {
         return 'status-pending';
       case 'cancelled':
         return 'status-cancelled';
+      case 'completed':
+        return 'status-completed';
       default:
         return 'status-pending';
     }
@@ -252,6 +291,68 @@ export class AccountComponent implements OnInit {
       console.error('Error removing favorite:', error);
       alert('An error occurred while removing the favorite');
     }
+  }
+
+  openReservationModal(center: Center) {
+    this.selectedCenterForReservation = center;
+    this.showReservationModal = true;
+    // Set minimum date to today
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    this.reservationDate = `${year}-${month}-${day}`;
+    this.reservationHour = '';
+    this.reservationError = '';
+  }
+
+  closeReservationModal() {
+    this.showReservationModal = false;
+    this.selectedCenterForReservation = null;
+    this.reservationDate = '';
+    this.reservationHour = '';
+    this.reservationError = '';
+  }
+
+  async submitReservation() {
+    if (!this.selectedCenterForReservation || !this.reservationDate || !this.reservationHour) {
+      this.reservationError = 'Please fill in all fields';
+      return;
+    }
+
+    this.loading = true;
+    this.reservationError = '';
+
+    try {
+      const result = await this.reservationsService.createReservation({
+        centerId: String(this.selectedCenterForReservation.objectId),
+        date: this.reservationDate,
+        hour: this.reservationHour,
+        status: 'pending'
+      });
+
+      if (result.success) {
+        alert('Reservation created successfully!');
+        this.closeReservationModal();
+        // Reload reservations to show the new one
+        await this.loadReservations();
+      } else {
+        this.reservationError = result.error || 'Failed to create reservation';
+      }
+    } catch (error) {
+      console.error('Reservation error:', error);
+      this.reservationError = 'An error occurred while creating the reservation';
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  getMinDate(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }
 
