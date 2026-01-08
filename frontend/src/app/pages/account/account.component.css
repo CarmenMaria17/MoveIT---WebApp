@@ -1,5 +1,6 @@
 .account-container {
-    min-height: calc(100vh - 60px);
+    height: calc(100vh - 60px);
+    max-height: calc(100vh - 60px);
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 1rem;
     padding-bottom: 2rem;
@@ -240,6 +241,25 @@ h2 {
 .favorite-actions {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.reserve-favorite-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.reserve-favorite-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .remove-favorite-btn {
@@ -323,6 +343,25 @@ h2 {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  padding-right: 8px;
+}
+
+.reservations-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.reservations-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.reservations-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.reservations-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .reservation-card {
@@ -439,6 +478,28 @@ h2 {
   color: #d32f2f;
 }
 
+.status-completed {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.reservation-section-title {
+  margin: 24px 0 16px 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.reservation-section-title:first-child {
+  margin-top: 0;
+}
+
+.past-reservations-section {
+  margin-top: 32px;
+}
+
 .no-reservations {
   text-align: center;
   padding: 40px 20px;
@@ -466,6 +527,31 @@ h2 {
 }
 
 /* Calendar View */
+.calendar-view {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 8px;
+}
+
+.calendar-view::-webkit-scrollbar {
+  width: 6px;
+}
+
+.calendar-view::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.calendar-view::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.calendar-view::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
 .calendar-container {
   margin-top: 20px;
   max-width: 700px;
@@ -675,5 +761,97 @@ h2 {
 .btn-danger:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(108, 117, 125, 0.3);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Reservation Modal Styles */
+.reservation-modal {
+  max-width: 500px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.center-name {
+  color: #667eea;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.error-message {
+  background: #ffebee;
+  color: #d32f2f;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 12px;
+  font-size: 0.9rem;
 }
 

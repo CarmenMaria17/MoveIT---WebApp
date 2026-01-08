@@ -43,8 +43,14 @@
                 </p>
               </div>
               <div class="favorite-actions">
-                <button 
-                  class="remove-favorite-btn" 
+                <button
+                  class="reserve-favorite-btn"
+                  (click)="openReservationModal(favorite.center)"
+                  title="Make reservation">
+                  Reserve
+                </button>
+                <button
+                  class="remove-favorite-btn"
                   (click)="removeFavorite(favorite.centerId)"
                   title="Remove from favorites">
                   ♥
@@ -84,26 +90,51 @@
               <p>You don't have any reservations yet.</p>
               <a routerLink="/map" class="link-btn">Browse Centers</a>
             </div>
-            
-            <div *ngFor="let reservation of reservations" class="reservation-card">
-              <div class="reservation-info">
-                <h4>{{ reservation.centerName }}</h4>
-                <div class="reservation-details">
-                  <span class="date-badge">
-                    📅 {{ reservation.date }}
-                  </span>
-                  <span class="time-badge">
-                    🕐 {{ reservation.hour }}
-                  </span>
-                  <span class="status-badge" [ngClass]="getStatusClass(reservation.status)">
-                    {{ reservation.status }}
-                  </span>
+
+            <!-- Current Reservations -->
+            <div *ngIf="getCurrentReservations().length > 0">
+              <h4 class="reservation-section-title">Current Reservations</h4>
+              <div *ngFor="let reservation of getCurrentReservations()" class="reservation-card">
+                <div class="reservation-info">
+                  <h4>{{ reservation.centerName }}</h4>
+                  <div class="reservation-details">
+                    <span class="date-badge">
+                      📅 {{ reservation.date }}
+                    </span>
+                    <span class="time-badge">
+                      🕐 {{ reservation.hour }}
+                    </span>
+                    <span class="status-badge" [ngClass]="getStatusClass(reservation.status)">
+                      {{ reservation.status }}
+                    </span>
+                  </div>
+                </div>
+                <div class="reservation-actions" *ngIf="canCancel(reservation)">
+                  <button class="cancel-btn" (click)="openCancelConfirm(reservation)">
+                    Cancel
+                  </button>
                 </div>
               </div>
-              <div class="reservation-actions" *ngIf="canCancel(reservation)">
-                <button class="cancel-btn" (click)="openCancelConfirm(reservation)">
-                  Cancel
-                </button>
+            </div>
+
+            <!-- Past Reservations -->
+            <div *ngIf="getPastReservations().length > 0" class="past-reservations-section">
+              <h4 class="reservation-section-title">Past Reservations</h4>
+              <div *ngFor="let reservation of getPastReservations()" class="reservation-card past">
+                <div class="reservation-info">
+                  <h4>{{ reservation.centerName }}</h4>
+                  <div class="reservation-details">
+                    <span class="date-badge">
+                      📅 {{ reservation.date }}
+                    </span>
+                    <span class="time-badge">
+                      🕐 {{ reservation.hour }}
+                    </span>
+                    <span class="status-badge" [ngClass]="getStatusClass(reservation.status)">
+                      {{ reservation.status }}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -198,7 +229,7 @@
     <div class="confirm-modal" (click)="$event.stopPropagation()">
       <h3>Cancel Reservation</h3>
       <p *ngIf="reservationToCancel">
-        Are you sure you want to cancel your reservation at <strong>{{ reservationToCancel.centerName }}</strong> 
+        Are you sure you want to cancel your reservation at <strong>{{ reservationToCancel.centerName }}</strong>
         on <strong>{{ reservationToCancel.date }}</strong> at <strong>{{ reservationToCancel.hour }}</strong>?
       </p>
       <p class="warning-text">This action cannot be undone.</p>
@@ -208,6 +239,57 @@
         </button>
         <button class="btn-danger" (click)="confirmCancel()" [disabled]="loading">
           {{ loading ? 'Cancelling...' : 'Yes, Cancel' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reservation Modal -->
+  <div class="modal-overlay" *ngIf="showReservationModal" (click)="closeReservationModal()">
+    <div class="confirm-modal reservation-modal" (click)="$event.stopPropagation()">
+      <h3>Make a Reservation</h3>
+      <div class="form-group">
+        <label>Center:</label>
+        <p class="center-name">{{ selectedCenterForReservation?.name || 'Unnamed Center' }}</p>
+      </div>
+
+      <div class="form-group">
+        <label for="reservationDate">Date:</label>
+        <input
+          type="date"
+          id="reservationDate"
+          [(ngModel)]="reservationDate"
+          [min]="getMinDate()"
+          required
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="reservationHour">Hour:</label>
+        <select
+          id="reservationHour"
+          [(ngModel)]="reservationHour"
+          required
+          class="form-input"
+        >
+          <option value="">Select an hour</option>
+          <option *ngFor="let hour of availableHours" [value]="hour">
+            {{ hour }}
+          </option>
+        </select>
+      </div>
+
+      <div *ngIf="reservationError" class="error-message">
+        {{ reservationError }}
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeReservationModal()" [disabled]="loading">
+          Cancel
+        </button>
+        <button class="btn-primary" (click)="submitReservation()" [disabled]="loading">
+          {{ loading ? 'Creating...' : 'Create Reservation' }}
         </button>
       </div>
     </div>
