@@ -1,20 +1,5 @@
 <div class="account-container">
   <ng-container *ngIf="authService.isAuthenticated(); else guestState">
-    <!-- Header Container -->
-    <div class="header-container">
-      <div class="header-content">
-        <div>
-          <h2>Account</h2>
-          <p class="subtitle">Manage your MoveIT account</p>
-        </div>
-        <div class="info-row">
-          <span class="label">Email:</span>
-          <span class="value">{{ authService.getCurrentUserEmail() }}</span>
-        </div>
-        <button class="logout-btn" (click)="logout()">Logout</button>
-      </div>
-    </div>
-
     <!-- Main Content Layout: Favorites Left, Calendar Center -->
     <div class="main-content-layout">
       <!-- Favorites Section - Left -->
