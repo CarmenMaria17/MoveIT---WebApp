@@ -76,15 +76,85 @@
   background-color: #667eea;
 }
 
-.user-info {
+.user-menu {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 1rem;
 }
 
-.user-email {
+.user-icon-btn {
+  background: transparent;
+  border: none;
   color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+.user-icon-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-icon-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.dropdown-item {
+  padding: 0.75rem 1rem;
+  color: #2c3e50;
   font-size: 0.9rem;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.user-email-item {
+  font-weight: 500;
+  cursor: default;
+}
+
+.user-email-item:hover {
+  background-color: transparent;
+}
+
+.logout-item {
+  color: #e74c3c;
+  font-weight: 500;
+}
+
+.logout-item:hover {
+  background-color: #fee;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 0;
 }
 
 .logout-btn {
