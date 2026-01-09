@@ -79,7 +79,7 @@ export class AccountComponent implements OnInit {
       this.reservations = rawReservations
         .filter((res: any) => res.status !== 'cancelled') // Filter out cancelled reservations
         .map((res: any) => {
-          const center = centers.find(c => String(c.objectId) === String(res.centerId));
+          const center = centers.find(c => String(c.id) === String(res.centerId));
           // Auto-update status to completed if the reservation is in the past
           let status = res.status || 'pending';
           if (this.isReservationPast(res.date)) {
@@ -267,7 +267,7 @@ export class AccountComponent implements OnInit {
       // Map favorite IDs to center objects
       this.favoriteCenters = favoriteIds
         .map(centerId => {
-          const center = allCenters.find(c => String(c.objectId) === centerId);
+          const center = allCenters.find(c => String(c.id) === centerId);
           return center ? { centerId, center } : null;
         })
         .filter((fc): fc is FavoriteCenter => fc !== null);
@@ -325,7 +325,7 @@ export class AccountComponent implements OnInit {
 
     try {
       const result = await this.reservationsService.createReservation({
-        centerId: String(this.selectedCenterForReservation.objectId),
+        centerId: String(this.selectedCenterForReservation.id),
         date: this.reservationDate,
         hour: this.reservationHour,
         status: 'pending'

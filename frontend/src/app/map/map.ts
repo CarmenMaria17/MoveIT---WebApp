@@ -258,7 +258,7 @@ export class MapComponent implements OnInit, OnDestroy {
   async loadFavoriteStatuses() {
     const favorites = await this.favoritesService.getUserFavorites();
     this.centers.forEach(center => {
-      this.favoriteStatuses.set(center.objectId, favorites.includes(String(center.objectId)));
+      this.favoriteStatuses.set(center.id, favorites.includes(String(center.id)));
     });
   }
 
@@ -282,7 +282,7 @@ export class MapComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const centerId = center.objectId;
+    const centerId = center.id;
     const isFavorite = this.favoriteStatuses.get(centerId) || false;
 
     try {
@@ -340,7 +340,7 @@ export class MapComponent implements OnInit, OnDestroy {
 
     try {
       const result = await this.reservationsService.createReservation({
-        centerId: String(this.selectedCenter.objectId),
+        centerId: String(this.selectedCenter.id),
         date: this.reservationDate,
         hour: this.reservationHour,
         status: 'pending'

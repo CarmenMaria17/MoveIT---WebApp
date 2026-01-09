@@ -18,7 +18,7 @@
         </button>
         <div class="dropdown-menu" *ngIf="isDropdownOpen" (click)="$event.stopPropagation()">
           <div class="dropdown-item user-email-item">
-            {{ authService.getCurrentUserEmail() }}
+            {{ authService.getCurrentUsername() || 'User' }}
           </div>
           <div class="dropdown-divider"></div>
           <button class="dropdown-item logout-item" (click)="onLogout()">
