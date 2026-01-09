@@ -46,9 +46,9 @@
           <button
             *ngIf="authService.isAuthenticated()"
             class="favorite-btn"
-            [class.favorited]="isFavorite(center.objectId)"
+            [class.favorited]="isFavorite(center.id)"
             (click)="toggleFavorite(center)"
-            [title]="isFavorite(center.objectId) ? 'Remove from favorites' : 'Add to favorites'"
+            [title]="isFavorite(center.id) ? 'Remove from favorites' : 'Add to favorites'"
           >
             ♥
           </button>

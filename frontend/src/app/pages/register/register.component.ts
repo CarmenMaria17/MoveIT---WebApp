@@ -10,7 +10,7 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './register.component.css'
 })
 export class RegisterComponent {
-  name: string = '';
+  username: string = '';
   email: string = '';
   password: string = '';
   confirmPassword: string = '';
@@ -31,7 +31,7 @@ export class RegisterComponent {
     }
 
     // Basic validation
-    if (!this.name || !this.email || !this.password || !this.confirmPassword) {
+    if (!this.username || !this.email || !this.password || !this.confirmPassword) {
       alert('Please fill in all fields.');
       return;
     }
@@ -42,7 +42,7 @@ export class RegisterComponent {
     }
 
     try {
-      const result = await this.authService.register(this.name, this.email, this.password);
+      const result = await this.authService.register(this.username, this.email, this.password);
       if (result.success) {
         alert('Registration successful! Welcome to MoveIT.');
         this.router.navigate(['/home']);
