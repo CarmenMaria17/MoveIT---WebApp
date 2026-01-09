@@ -40,6 +40,7 @@ export class AccountComponent implements OnInit {
   loadingFavorites: boolean = false;
   viewMode: 'list' | 'calendar' = 'list';
   selectedMonth: Date = new Date();
+  selectedDay: string | null = null; // Track selected day for filtering
   showCancelConfirm: boolean = false;
   reservationToCancel: ReservationWithCenter | null = null;
 
@@ -173,6 +174,12 @@ export class AccountComponent implements OnInit {
   }
 
   getReservationsForSelectedMonth(): ReservationWithCenter[] {
+    // If a specific day is selected, return only reservations for that day
+    if (this.selectedDay) {
+      return this.reservations.filter(r => r.date === this.selectedDay);
+    }
+
+    // Otherwise, return all reservations for the selected month
     const year = this.selectedMonth.getFullYear();
     const month = this.selectedMonth.getMonth();
 
@@ -182,6 +189,18 @@ export class AccountComponent implements OnInit {
       const reservationDate = new Date(y, m - 1, d);
       return reservationDate.getFullYear() === year && reservationDate.getMonth() === month;
     });
+  }
+
+  selectDay(date: Date) {
+    // Only allow selecting days from the current month
+    if (date.getMonth() !== this.selectedMonth.getMonth()) {
+      return;
+    }
+    this.selectedDay = this.formatDate(date);
+  }
+
+  showAllReservations() {
+    this.selectedDay = null;
   }
 
   getCalendarDays(): Date[] {
@@ -209,10 +228,12 @@ export class AccountComponent implements OnInit {
 
   previousMonth() {
     this.selectedMonth = new Date(this.selectedMonth.getFullYear(), this.selectedMonth.getMonth() - 1, 1);
+    this.selectedDay = null; // Reset day selection when changing months
   }
 
   nextMonth() {
     this.selectedMonth = new Date(this.selectedMonth.getFullYear(), this.selectedMonth.getMonth() + 1, 1);
+    this.selectedDay = null; // Reset day selection when changing months
   }
 
   formatDate(date: Date): string {
