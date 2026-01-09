@@ -21,7 +21,10 @@ import { CentersService, Center } from '../services/centers.service';
 import { FavoritesService } from '../services/favorites.service';
 import { ReservationsService } from '../services/reservations.service';
 import { AuthService } from '../services/auth.service';
+import { NotificationService } from '../services/notification.service';
 import { ReviewsModalComponent } from '../components/reviews-modal/reviews-modal.component';
+import { inject } from '@angular/core';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-map',
@@ -59,6 +62,8 @@ export class MapComponent implements OnInit, OnDestroy {
   reservationDate: string = '';
   reservationHour: string = '';
   favoriteStatuses: Map<string | number, boolean> = new Map();
+  availableSpots: number | null = null;
+  totalCapacity: number | null = null;
 
   // Available hours (9 AM to 9 PM)
   availableHours: string[] = [];
@@ -71,11 +76,14 @@ export class MapComponent implements OnInit, OnDestroy {
   reviewsCenterId: string | null = null;
   reviewsCenterName: string = '';
 
+  private firestore: Firestore = inject(Firestore);
+
   constructor(
     private centersService: CentersService,
     private favoritesService: FavoritesService,
     private reservationsService: ReservationsService,
-    public authService: AuthService
+    public authService: AuthService,
+    private notificationService: NotificationService
   ) {
     // Generate hours from 09:00 to 21:00
     for (let hour = 9; hour <= 21; hour++) {
@@ -284,7 +292,7 @@ export class MapComponent implements OnInit, OnDestroy {
 
   async toggleFavorite(center: Center) {
     if (!this.authService.isAuthenticated()) {
-      alert('Please log in to add favorites');
+      this.notificationService.warning('Please log in to add favorites');
       return;
     }
 
@@ -295,13 +303,15 @@ export class MapComponent implements OnInit, OnDestroy {
       if (isFavorite) {
         await this.favoritesService.removeFavorite(centerId);
         this.favoriteStatuses.set(centerId, false);
+        this.notificationService.info('Removed from favorites');
       } else {
         await this.favoritesService.addFavorite(centerId);
         this.favoriteStatuses.set(centerId, true);
+        this.notificationService.success('Added to favorites');
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-      alert('Failed to update favorite');
+      this.notificationService.error('Failed to update favorite');
     }
   }
 
@@ -309,9 +319,9 @@ export class MapComponent implements OnInit, OnDestroy {
     return this.favoriteStatuses.get(centerId) || false;
   }
 
-  openReservationForm(center: Center) {
+  async openReservationForm(center: Center) {
     if (!this.authService.isAuthenticated()) {
-      alert('Please log in to make a reservation');
+      this.notificationService.warning('Please log in to make a reservation');
       return;
     }
 
@@ -320,6 +330,11 @@ export class MapComponent implements OnInit, OnDestroy {
     const today = new Date().toISOString().split('T')[0];
     this.reservationDate = today;
     this.reservationHour = '';
+    this.availableSpots = null;
+    this.totalCapacity = null;
+
+    // Load center capacity
+    await this.loadCenterCapacity();
   }
 
   closeReservationForm() {
@@ -328,6 +343,44 @@ export class MapComponent implements OnInit, OnDestroy {
     this.reservationDate = '';
     this.reservationHour = '';
     this.errorMessage = '';
+    this.availableSpots = null;
+    this.totalCapacity = null;
+  }
+
+  async loadCenterCapacity() {
+    if (!this.selectedCenter) return;
+
+    try {
+      const centerRef = doc(this.firestore, 'centers', String(this.selectedCenter.id));
+      const centerDoc = await getDoc(centerRef);
+
+      if (centerDoc.exists()) {
+        const centerData = centerDoc.data();
+        this.totalCapacity = centerData['capacity'] || 1;
+      }
+    } catch (error) {
+      console.error('Error loading center capacity:', error);
+    }
+  }
+
+  async updateAvailableSpots() {
+    if (!this.selectedCenter || !this.reservationDate || !this.reservationHour || !this.totalCapacity) {
+      this.availableSpots = null;
+      return;
+    }
+
+    try {
+      const existingReservations = await this.reservationsService.getReservationsByCenterAndDateTime(
+        String(this.selectedCenter.id),
+        this.reservationDate,
+        this.reservationHour
+      );
+
+      this.availableSpots = this.totalCapacity - existingReservations.length;
+    } catch (error) {
+      console.error('Error updating available spots:', error);
+      this.availableSpots = null;
+    }
   }
 
   async submitReservation() {
@@ -353,7 +406,7 @@ export class MapComponent implements OnInit, OnDestroy {
       });
 
       if (result.success) {
-        alert('Reservation created successfully!');
+        this.notificationService.success('Reservation created successfully!');
         this.closeReservationForm();
       } else {
         this.errorMessage = result.error || 'Failed to create reservation';

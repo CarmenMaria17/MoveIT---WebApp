@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -8,6 +8,8 @@ import { CentersService, Center } from '../../services/centers.service';
 import { FavoritesService } from '../../services/favorites.service';
 import { ReviewsService } from '../../services/reviews.service';
 import { ReviewsModalComponent } from '../../components/reviews-modal/reviews-modal.component';
+import { NotificationService } from '../../services/notification.service';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 
 interface ReservationWithCenter {
   id: string;
@@ -48,6 +50,8 @@ export class AccountComponent implements OnInit {
   reservationHour: string = '';
   availableHours: string[] = [];
   reservationError: string = '';
+  availableSpots: number | null = null;
+  totalCapacity: number | null = null;
 
   // Review modal
   showReviewModal: boolean = false;
@@ -62,13 +66,16 @@ export class AccountComponent implements OnInit {
   reviewsCenterId: string | null = null;
   reviewsCenterName: string = '';
 
+  private firestore: Firestore = inject(Firestore);
+
   constructor(
     public authService: AuthService,
     private router: Router,
     private reservationsService: ReservationsService,
     private centersService: CentersService,
     private favoritesService: FavoritesService,
-    private reviewsService: ReviewsService
+    private reviewsService: ReviewsService,
+    private notificationService: NotificationService
   ) {
     // Generate hours from 09:00 to 21:00
     for (let hour = 9; hour <= 21; hour++) {
@@ -284,12 +291,13 @@ export class AccountComponent implements OnInit {
         // Reload reservations to reflect the cancellation
         await this.loadReservations();
         this.closeCancelConfirm();
+        this.notificationService.success('Reservation cancelled successfully!');
       } else {
-        alert(result.error || 'Failed to cancel reservation');
+        this.notificationService.error(result.error || 'Failed to cancel reservation');
       }
     } catch (error) {
       console.error('Error cancelling reservation:', error);
-      alert('An error occurred while cancelling the reservation');
+      this.notificationService.error('An error occurred while cancelling the reservation');
     } finally {
       this.loading = false;
     }
@@ -327,16 +335,17 @@ export class AccountComponent implements OnInit {
       if (success) {
         // Reload favorites to update the list
         await this.loadFavorites();
+        this.notificationService.success('Favorite removed successfully!');
       } else {
-        alert('Failed to remove favorite');
+        this.notificationService.error('Failed to remove favorite');
       }
     } catch (error) {
       console.error('Error removing favorite:', error);
-      alert('An error occurred while removing the favorite');
+      this.notificationService.error('An error occurred while removing the favorite');
     }
   }
 
-  openReservationModal(center: Center) {
+  async openReservationModal(center: Center) {
     this.selectedCenterForReservation = center;
     this.showReservationModal = true;
     // Set minimum date to today
@@ -347,6 +356,11 @@ export class AccountComponent implements OnInit {
     this.reservationDate = `${year}-${month}-${day}`;
     this.reservationHour = '';
     this.reservationError = '';
+    this.availableSpots = null;
+    this.totalCapacity = null;
+
+    // Load center capacity
+    await this.loadCenterCapacity();
   }
 
   closeReservationModal() {
@@ -355,6 +369,44 @@ export class AccountComponent implements OnInit {
     this.reservationDate = '';
     this.reservationHour = '';
     this.reservationError = '';
+    this.availableSpots = null;
+    this.totalCapacity = null;
+  }
+
+  async loadCenterCapacity() {
+    if (!this.selectedCenterForReservation) return;
+
+    try {
+      const centerRef = doc(this.firestore, 'centers', String(this.selectedCenterForReservation.id));
+      const centerDoc = await getDoc(centerRef);
+
+      if (centerDoc.exists()) {
+        const centerData = centerDoc.data();
+        this.totalCapacity = centerData['capacity'] || 1;
+      }
+    } catch (error) {
+      console.error('Error loading center capacity:', error);
+    }
+  }
+
+  async updateAvailableSpots() {
+    if (!this.selectedCenterForReservation || !this.reservationDate || !this.reservationHour || !this.totalCapacity) {
+      this.availableSpots = null;
+      return;
+    }
+
+    try {
+      const existingReservations = await this.reservationsService.getReservationsByCenterAndDateTime(
+        String(this.selectedCenterForReservation.id),
+        this.reservationDate,
+        this.reservationHour
+      );
+
+      this.availableSpots = this.totalCapacity - existingReservations.length;
+    } catch (error) {
+      console.error('Error updating available spots:', error);
+      this.availableSpots = null;
+    }
   }
 
   async submitReservation() {
@@ -381,7 +433,7 @@ export class AccountComponent implements OnInit {
       });
 
       if (result.success) {
-        alert('Reservation created successfully!');
+        this.notificationService.success('Reservation created successfully!');
         this.closeReservationModal();
         // Reload reservations to show the new one
         await this.loadReservations();
@@ -441,7 +493,7 @@ export class AccountComponent implements OnInit {
       });
 
       if (result.success) {
-        alert('Review submitted successfully!');
+        this.notificationService.success('Review submitted successfully!');
         this.reviewedReservations.add(this.reservationToReview.id);
         this.closeReviewModal();
       } else {

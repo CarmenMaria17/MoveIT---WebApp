@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-login',
@@ -13,19 +14,23 @@ export class LoginComponent {
   email: string = '';
   password: string = '';
 
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private notificationService: NotificationService
+  ) {}
 
   async onLogin() {
     try {
       const success = await this.authService.login(this.email, this.password);
       if (success) {
-        alert('Login successful! Welcome to MoveIT.');
+        this.notificationService.success('Login successful! Welcome to MoveIT.');
         this.router.navigate(['/home']);
       } else {
-        alert('Invalid credentials. Please check your email and password.');
+        this.notificationService.error('Invalid credentials. Please check your email and password.');
       }
     } catch (error) {
-      alert('An error occurred during login. Please try again.');
+      this.notificationService.error('An error occurred during login. Please try again.');
       console.error('Login error:', error);
     }
   }

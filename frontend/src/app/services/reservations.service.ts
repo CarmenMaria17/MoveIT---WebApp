@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, addDoc, getDocs, query, where, Timestamp, doc, updateDoc } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, getDocs, query, where, Timestamp, doc, updateDoc, getDoc } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 
 export interface Reservation {
@@ -59,15 +59,26 @@ export class ReservationsService {
         };
       }
 
-      // Check if reservation already exists for this center, date, and hour
+      // Check if reservation slot is full based on center's max capacity
       const existingReservations = await this.getReservationsByCenterAndDateTime(
         reservation.centerId,
         reservation.date,
         reservation.hour
       );
 
-      if (existingReservations.length > 0) {
-        return { success: false, error: 'This time slot is already reserved' };
+      // Get center's capacity from Firestore
+      const centerRef = doc(this.firestore, 'centers', reservation.centerId);
+      const centerDoc = await getDoc(centerRef);
+
+      if (!centerDoc.exists()) {
+        return { success: false, error: 'Center not found' };
+      }
+
+      const centerData = centerDoc.data();
+      const capacity = centerData['capacity'] || 1;
+
+      if (existingReservations.length >= capacity) {
+        return { success: false, error: `This time slot is fully booked (${capacity}/${capacity} spots taken)` };
       }
 
       const reservationData = {
