@@ -149,47 +149,60 @@
               <a routerLink="/map" class="link-btn">Browse Centers</a>
             </div>
 
-            <div *ngIf="reservations.length > 0" class="calendar-container">
-              <div class="calendar-header">
-                <button class="nav-btn" (click)="previousMonth()">‹</button>
-                <h4>{{ selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) }}</h4>
-                <button class="nav-btn" (click)="nextMonth()">›</button>
-              </div>
-              
-              <div class="calendar-grid">
-                <div class="calendar-weekday">Sun</div>
-                <div class="calendar-weekday">Mon</div>
-                <div class="calendar-weekday">Tue</div>
-                <div class="calendar-weekday">Wed</div>
-                <div class="calendar-weekday">Thu</div>
-                <div class="calendar-weekday">Fri</div>
-                <div class="calendar-weekday">Sat</div>
-                
-                <ng-container *ngFor="let day of getCalendarDays()">
-                  <div 
-                    class="calendar-day"
-                    [class.other-month]="day.getMonth() !== selectedMonth.getMonth()"
-                    [class.today]="isToday(day)"
-                    [class.has-reservation]="getReservationsForDate(formatDate(day)).length > 0"
-                    [class.past-date]="isPastDate(day) && day.getMonth() === selectedMonth.getMonth()">
-                    <div class="day-number">{{ day.getDate() }}</div>
-                    <div class="reservation-dots">
-                      <span 
-                        *ngFor="let reservation of getReservationsForDate(formatDate(day))"
-                        class="reservation-dot"
-                        [title]="reservation.centerName + ' at ' + reservation.hour">
-                      </span>
+            <div *ngIf="reservations.length > 0" class="calendar-layout">
+              <!-- Calendar - Left Side -->
+              <div class="calendar-container">
+                <div class="calendar-header">
+                  <button class="nav-btn" (click)="previousMonth()">‹</button>
+                  <h4>{{ selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) }}</h4>
+                  <button class="nav-btn" (click)="nextMonth()">›</button>
+                </div>
+
+                <div class="calendar-grid">
+                  <div class="calendar-weekday">Sun</div>
+                  <div class="calendar-weekday">Mon</div>
+                  <div class="calendar-weekday">Tue</div>
+                  <div class="calendar-weekday">Wed</div>
+                  <div class="calendar-weekday">Thu</div>
+                  <div class="calendar-weekday">Fri</div>
+                  <div class="calendar-weekday">Sat</div>
+
+                  <ng-container *ngFor="let day of getCalendarDays()">
+                    <div
+                      class="calendar-day"
+                      (click)="selectDay(day)"
+                      [class.other-month]="day.getMonth() !== selectedMonth.getMonth()"
+                      [class.today]="isToday(day)"
+                      [class.selected-day]="selectedDay === formatDate(day)"
+                      [class.has-reservation]="getReservationsForDate(formatDate(day)).length > 0"
+                      [class.past-date]="isPastDate(day) && day.getMonth() === selectedMonth.getMonth()">
+                      <div class="day-number">{{ day.getDate() }}</div>
+                      <div class="reservation-dots">
+                        <span
+                          *ngFor="let reservation of getReservationsForDate(formatDate(day))"
+                          class="reservation-dot"
+                          [title]="reservation.centerName + ' at ' + reservation.hour">
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </ng-container>
+                  </ng-container>
+                </div>
               </div>
 
-              <!-- Reservation Details for Selected Month -->
+              <!-- Reservation Details - Right Side -->
               <div class="month-reservations">
-                <h5>Reservations in {{ selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) }}</h5>
+                <div class="reservations-header">
+                  <h5>
+                    <span *ngIf="!selectedDay">Reservations in {{ selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) }}</span>
+                    <span *ngIf="selectedDay">Reservations on {{ selectedDay }}</span>
+                  </h5>
+                  <button *ngIf="selectedDay" class="show-all-btn" (click)="showAllReservations()">
+                    Show All
+                  </button>
+                </div>
                 <div class="reservations-list">
-                  <div 
-                    *ngFor="let reservation of getReservationsForSelectedMonth()" 
+                  <div
+                    *ngFor="let reservation of getReservationsForSelectedMonth()"
                     class="reservation-card small"
                     [class.past]="isReservationPast(reservation.date)">
                     <div class="reservation-info">
@@ -209,7 +222,8 @@
                     </div>
                   </div>
                   <div *ngIf="getReservationsForSelectedMonth().length === 0" class="no-reservations">
-                    <p>No reservations for this month.</p>
+                    <p *ngIf="!selectedDay">No reservations for this month.</p>
+                    <p *ngIf="selectedDay">No reservations for this day.</p>
                   </div>
                 </div>
               </div>
