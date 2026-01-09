@@ -122,6 +122,29 @@
   font-size: 0.9rem;
 }
 
+.center-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.rating-stars {
+  color: #ffc107;
+  font-size: 1.1rem;
+}
+
+.rating-value {
+  color: #333;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.rating-count {
+  color: #666;
+  font-size: 0.9rem;
+}
+
 .center-actions {
   display: flex;
   gap: 12px;

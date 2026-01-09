@@ -21,11 +21,12 @@ import { CentersService, Center } from '../services/centers.service';
 import { FavoritesService } from '../services/favorites.service';
 import { ReservationsService } from '../services/reservations.service';
 import { AuthService } from '../services/auth.service';
+import { ReviewsModalComponent } from '../components/reviews-modal/reviews-modal.component';
 
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReviewsModalComponent],
   templateUrl: './map.html',
   styleUrls: ['./map.css']
 })
@@ -64,6 +65,11 @@ export class MapComponent implements OnInit, OnDestroy {
 
   loading: boolean = false;
   errorMessage: string = '';
+
+  // Reviews modal
+  showReviewsModal: boolean = false;
+  reviewsCenterId: string | null = null;
+  reviewsCenterName: string = '';
 
   constructor(
     private centersService: CentersService,
@@ -362,6 +368,18 @@ export class MapComponent implements OnInit, OnDestroy {
 
   getMinDate(): string {
     return new Date().toISOString().split('T')[0];
+  }
+
+  openReviewsModal(center: Center) {
+    this.reviewsCenterId = String(center.id);
+    this.reviewsCenterName = center.name || 'Unknown Center';
+    this.showReviewsModal = true;
+  }
+
+  closeReviewsModal() {
+    this.showReviewsModal = false;
+    this.reviewsCenterId = null;
+    this.reviewsCenterName = '';
   }
 
   ngOnDestroy(): void {

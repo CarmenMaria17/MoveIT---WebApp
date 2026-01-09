@@ -25,6 +25,16 @@ export class ReservationsService {
     }
 
     try {
+      // Check if the reservation time is in the past
+      const now = new Date();
+      const [y, m, d] = reservation.date.split('-').map(Number);
+      const [hour, minute] = reservation.hour.split(':').map(Number);
+      const reservationDateTime = new Date(y, m - 1, d, hour, minute || 0, 0, 0);
+
+      if (reservationDateTime < now) {
+        return { success: false, error: 'Cannot book a reservation for a time that has already passed' };
+      }
+
       // Helper function to check if two hours overlap (including adjacent hours)
       const hoursOverlap = (hour1: string, hour2: string): boolean => {
         const h1 = parseInt(hour1.split(':')[0]);
@@ -36,16 +46,16 @@ export class ReservationsService {
       // Check if user already has overlapping reservations on the same date
       const userReservations = await this.getUserReservations();
       const reservationsOnSameDate = userReservations.filter(
-        (r: any) => r.date === reservation.date && 
+        (r: any) => r.date === reservation.date &&
                    (r.status === 'pending' || r.status === 'confirmed') &&
                    hoursOverlap(r.hour, reservation.hour)
       );
 
       if (reservationsOnSameDate.length > 0) {
         const existingReservation = reservationsOnSameDate[0];
-        return { 
-          success: false, 
-          error: `You already have a reservation at ${existingReservation.hour} on this date. Reservations cannot overlap or be adjacent.` 
+        return {
+          success: false,
+          error: `You already have a reservation at ${existingReservation.hour} on this date. Reservations cannot overlap or be adjacent.`
         };
       }
 
