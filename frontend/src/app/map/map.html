@@ -49,6 +49,13 @@
           <p class="category" *ngIf="center.category">
             {{ center.category }}
           </p>
+          <div class="center-rating" *ngIf="center['rating']" (click)="openReviewsModal(center)" style="cursor: pointer;">
+            <span class="rating-stars">★</span>
+            <span class="rating-value">{{ center['rating'].toFixed(1) }}</span>
+            <span class="rating-count" *ngIf="center['reviewCount']">
+              ({{ center['reviewCount'] }})
+            </span>
+          </div>
           <p class="address" *ngIf="center.address">
             {{ center.address }}
           </p>
@@ -154,3 +161,11 @@
   <!-- MAPA -->
   <div #mapViewNode class="map-view"></div>
 </div>
+
+<!-- Reviews Modal -->
+<app-reviews-modal
+  [centerId]="reviewsCenterId"
+  [centerName]="reviewsCenterName"
+  [show]="showReviewsModal"
+  (closeModal)="closeReviewsModal()">
+</app-reviews-modal>

@@ -23,6 +23,13 @@
                 <p class="category" *ngIf="favorite.center.category">
                   {{ favorite.center.category }}
                 </p>
+                <div class="center-rating" *ngIf="favorite.center['rating']" (click)="openReviewsModal(favorite.center)" style="cursor: pointer;">
+                  <span class="rating-stars">★</span>
+                  <span class="rating-value">{{ favorite.center['rating'].toFixed(1) }}</span>
+                  <span class="rating-count" *ngIf="favorite.center['reviewCount']">
+                    ({{ favorite.center['reviewCount'] }})
+                  </span>
+                </div>
                 <p class="address" *ngIf="favorite.center.address">
                   {{ favorite.center.address }}
                 </p>
@@ -119,6 +126,17 @@
                       {{ reservation.status }}
                     </span>
                   </div>
+                </div>
+                <div class="reservation-actions">
+                  <button
+                    *ngIf="canReview(reservation)"
+                    class="review-btn"
+                    (click)="openReviewModal(reservation)">
+                    Leave Review
+                  </button>
+                  <span *ngIf="hasReviewed(reservation)" class="reviewed-badge">
+                    ✓ Reviewed
+                  </span>
                 </div>
               </div>
             </div>
@@ -280,3 +298,65 @@
     </div>
   </div>
 </div>
+
+<!-- Review Modal -->
+<div *ngIf="showReviewModal" class="modal-overlay" (click)="closeReviewModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Leave a Review</h3>
+      <button class="close-btn" (click)="closeReviewModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="reservationToReview" class="review-details">
+        <p><strong>Center:</strong> {{ reservationToReview.centerName }}</p>
+        <p><strong>Date:</strong> {{ reservationToReview.date }} at {{ reservationToReview.hour }}</p>
+      </div>
+
+      <div class="form-group">
+        <label for="reviewRating">Rating:</label>
+        <div class="star-rating">
+          <span
+            *ngFor="let star of [1, 2, 3, 4, 5]"
+            class="star"
+            [class.filled]="star <= reviewRating"
+            (click)="reviewRating = star">
+            ★
+          </span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="reviewComment">Comment (optional):</label>
+        <textarea
+          id="reviewComment"
+          [(ngModel)]="reviewComment"
+          placeholder="Share your experience..."
+          rows="4"
+          class="form-input"
+        ></textarea>
+      </div>
+
+      <div *ngIf="reviewError" class="error-message">
+        {{ reviewError }}
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeReviewModal()" [disabled]="loading">
+          Cancel
+        </button>
+        <button class="btn-primary" (click)="submitReview()" [disabled]="loading">
+          {{ loading ? 'Submitting...' : 'Submit Review' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reviews Modal -->
+<app-reviews-modal
+  [centerId]="reviewsCenterId"
+  [centerName]="reviewsCenterName"
+  [show]="showReviewsModal"
+  (closeModal)="closeReviewsModal()">
+</app-reviews-modal>

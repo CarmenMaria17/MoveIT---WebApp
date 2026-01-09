@@ -73,6 +73,20 @@ exports.createReservation = functions.https.onRequest(async (req, res) => {
       return;
     }
 
+    // Check if the reservation time is in the past
+    const now = new Date();
+    const [y, m, d] = date.split("-").map(Number);
+    const [h, min] = hour.split(":").map(Number);
+    const reservationDateTime = new Date(y, m - 1, d, h, min || 0, 0, 0);
+
+    if (reservationDateTime < now) {
+      res.status(400).json({
+        success: false,
+        error: "Cannot book a reservation for a time that has already passed",
+      });
+      return;
+    }
+
     // Helper function to check if two hours overlap (including adjacent hours)
     const hoursOverlap = (hour1, hour2) => {
       const h1 = parseInt(hour1.split(":")[0]);
@@ -286,6 +300,214 @@ exports.cancelReservation = functions.https.onRequest(async (req, res) => {
   }
 });
 
+
+// Create review
+exports.createReview = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set("Access-Control-Allow-Origin", "*");
+
+  if (req.method === "OPTIONS") {
+    res.set("Access-Control-Allow-Methods", "POST");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+    res.status(204).send("");
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).send("Method Not Allowed");
+    return;
+  }
+
+  try {
+    const {centerId, reservationId, userId, rating, comment} = req.body;
+
+    if (!centerId || !reservationId || !userId || !rating) {
+      res.status(400).json({success: false, error: "Missing required fields"});
+      return;
+    }
+
+    // Validate rating
+    if (rating < 1 || rating > 5) {
+      res.status(400).json({
+        success: false,
+        error: "Rating must be between 1 and 5 stars",
+      });
+      return;
+    }
+
+    // Check if user already reviewed this reservation
+    const existingReviews = await admin.firestore()
+        .collection("comments")
+        .where("reservationId", "==", reservationId)
+        .where("userId", "==", userId)
+        .get();
+
+    if (!existingReviews.empty) {
+      res.status(400).json({
+        success: false,
+        error: "You have already reviewed this reservation",
+      });
+      return;
+    }
+
+    // Verify the reservation exists and belongs to the user
+    const reservationDoc = await admin.firestore()
+        .collection("reservations")
+        .doc(reservationId)
+        .get();
+
+    if (!reservationDoc.exists) {
+      res.status(404).json({success: false, error: "Reservation not found"});
+      return;
+    }
+
+    const reservationData = reservationDoc.data();
+    if (reservationData.userId !== userId) {
+      res.status(403).json({
+        success: false,
+        error: "You can only review your own reservations",
+      });
+      return;
+    }
+
+    // Create the review
+    const reviewData = {
+      centerId: String(centerId),
+      reservationId: reservationId,
+      userId: userId,
+      rating: Number(rating),
+      comment: comment || "",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const reviewRef = await admin.firestore()
+        .collection("comments")
+        .add(reviewData);
+
+    // Calculate and update center's average rating
+    const allReviews = await admin.firestore()
+        .collection("comments")
+        .where("centerId", "==", String(centerId))
+        .get();
+
+    const ratings = allReviews.docs.map((doc) => doc.data().rating);
+    const averageRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+
+    // Update center's rating
+    await admin.firestore()
+        .collection("centers")
+        .doc(String(centerId))
+        .update({
+          rating: averageRating,
+          reviewCount: ratings.length,
+        });
+
+    res.status(200).json({
+      success: true,
+      id: reviewRef.id,
+      averageRating: averageRating,
+    });
+  } catch (error) {
+    console.error("Error creating review:", error);
+    res.status(500).json({success: false, error: error.toString()});
+  }
+});
+
+// Get reviews by center
+exports.getReviewsByCenter = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set("Access-Control-Allow-Origin", "*");
+
+  if (req.method === "OPTIONS") {
+    res.set("Access-Control-Allow-Methods", "GET");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+    res.status(204).send("");
+    return;
+  }
+
+  try {
+    const centerId = req.query.centerId;
+
+    if (!centerId) {
+      res.status(400).json({error: "centerId is required"});
+      return;
+    }
+
+    const snapshot = await admin.firestore()
+        .collection("comments")
+        .where("centerId", "==", String(centerId))
+        .get();
+
+    const reviews = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Error getting reviews:", error);
+    res.status(500).json({error: error.toString()});
+  }
+});
+
+// Recalculate ratings for all centers (utility function)
+exports.recalculateCenterRatings = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set("Access-Control-Allow-Origin", "*");
+
+  if (req.method === "OPTIONS") {
+    res.set("Access-Control-Allow-Methods", "POST");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+    res.status(204).send("");
+    return;
+  }
+
+  try {
+    // Get all reviews
+    const reviewsSnapshot = await admin.firestore()
+        .collection("comments")
+        .get();
+
+    // Group reviews by centerId
+    const reviewsByCenter = {};
+    reviewsSnapshot.docs.forEach((doc) => {
+      const review = doc.data();
+      const centerId = String(review.centerId);
+
+      if (!reviewsByCenter[centerId]) {
+        reviewsByCenter[centerId] = [];
+      }
+      reviewsByCenter[centerId].push(review.rating);
+    });
+
+    // Update each center with calculated rating
+    const updatePromises = [];
+    for (const [centerId, ratings] of Object.entries(reviewsByCenter)) {
+      const averageRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+
+      updatePromises.push(
+          admin.firestore()
+              .collection("centers")
+              .doc(centerId)
+              .update({
+                rating: averageRating,
+                reviewCount: ratings.length,
+              }),
+      );
+    }
+
+    await Promise.all(updatePromises);
+
+    res.status(200).json({
+      success: true,
+      message: `Updated ratings for ${Object.keys(reviewsByCenter).length} centers`,
+      centersUpdated: Object.keys(reviewsByCenter).length,
+    });
+  } catch (error) {
+    console.error("Error recalculating ratings:", error);
+    res.status(500).json({success: false, error: error.toString()});
+  }
+});
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started

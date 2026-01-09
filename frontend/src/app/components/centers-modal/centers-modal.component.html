@@ -37,6 +37,13 @@
           <p class="category" *ngIf="center.category">
             <strong>Category:</strong> {{ center.category }}
           </p>
+          <div class="center-rating" *ngIf="center['rating']">
+            <span class="rating-stars">★</span>
+            <span class="rating-value">{{ center['rating'].toFixed(1) }}</span>
+            <span class="rating-count" *ngIf="center['reviewCount']">
+              ({{ center['reviewCount'] }} reviews)
+            </span>
+          </div>
           <p class="address" *ngIf="center.address">
             <strong>Address:</strong> {{ center.address }}
           </p>

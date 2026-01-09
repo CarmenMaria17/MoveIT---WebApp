@@ -6,6 +6,8 @@ import { AuthService } from '../../services/auth.service';
 import { ReservationsService } from '../../services/reservations.service';
 import { CentersService, Center } from '../../services/centers.service';
 import { FavoritesService } from '../../services/favorites.service';
+import { ReviewsService } from '../../services/reviews.service';
+import { ReviewsModalComponent } from '../../components/reviews-modal/reviews-modal.component';
 
 interface ReservationWithCenter {
   id: string;
@@ -25,7 +27,7 @@ interface FavoriteCenter {
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink, ReviewsModalComponent],
   templateUrl: './account.component.html',
   styleUrl: './account.component.css'
 })
@@ -47,12 +49,26 @@ export class AccountComponent implements OnInit {
   availableHours: string[] = [];
   reservationError: string = '';
 
+  // Review modal
+  showReviewModal: boolean = false;
+  reservationToReview: ReservationWithCenter | null = null;
+  reviewRating: number = 5;
+  reviewComment: string = '';
+  reviewError: string = '';
+  reviewedReservations: Set<string> = new Set();
+
+  // Reviews modal for viewing all reviews
+  showReviewsModal: boolean = false;
+  reviewsCenterId: string | null = null;
+  reviewsCenterName: string = '';
+
   constructor(
     public authService: AuthService,
     private router: Router,
     private reservationsService: ReservationsService,
     private centersService: CentersService,
-    private favoritesService: FavoritesService
+    private favoritesService: FavoritesService,
+    private reviewsService: ReviewsService
   ) {
     // Generate hours from 09:00 to 21:00
     for (let hour = 9; hour <= 21; hour++) {
@@ -64,8 +80,25 @@ export class AccountComponent implements OnInit {
     if (this.authService.isAuthenticated()) {
       await Promise.all([
         this.loadReservations(),
-        this.loadFavorites()
+        this.loadFavorites(),
+        this.loadReviewedReservations()
       ]);
+    }
+  }
+
+  async loadReviewedReservations() {
+    try {
+      const rawReservations = await this.reservationsService.getUserReservations();
+
+      // Check which reservations have been reviewed
+      for (const reservation of rawReservations) {
+        const hasReview = await this.reviewsService.hasUserReviewedReservation(reservation.id);
+        if (hasReview) {
+          this.reviewedReservations.add(reservation.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading reviewed reservations:', error);
     }
   }
 
@@ -82,7 +115,7 @@ export class AccountComponent implements OnInit {
           const center = centers.find(c => String(c.id) === String(res.centerId));
           // Auto-update status to completed if the reservation is in the past
           let status = res.status || 'pending';
-          if (this.isReservationPast(res.date)) {
+          if (this.isReservationPast(res.date, res.hour)) {
             status = 'completed';
           }
           return {
@@ -125,11 +158,11 @@ export class AccountComponent implements OnInit {
   }
 
   getCurrentReservations(): ReservationWithCenter[] {
-    return this.reservations.filter(r => !this.isReservationPast(r.date));
+    return this.reservations.filter(r => !this.isReservationPast(r.date, r.hour));
   }
 
   getPastReservations(): ReservationWithCenter[] {
-    return this.reservations.filter(r => this.isReservationPast(r.date));
+    return this.reservations.filter(r => this.isReservationPast(r.date, r.hour));
   }
 
   getReservationsForSelectedMonth(): ReservationWithCenter[] {
@@ -196,12 +229,22 @@ export class AccountComponent implements OnInit {
     return checkDate < today;
   }
 
-  isReservationPast(dateString: string): boolean {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  isReservationPast(dateString: string, hourString?: string): boolean {
+    const now = new Date();
     // Parse date string manually to avoid timezone issues
     const [y, m, d] = dateString.split('-').map(Number);
     const reservationDate = new Date(y, m - 1, d);
+
+    // If hour is provided, include time in comparison
+    if (hourString) {
+      const [hour, minute] = hourString.split(':').map(Number);
+      reservationDate.setHours(hour, minute || 0, 0, 0);
+      return reservationDate < now;
+    }
+
+    // If no hour provided, just compare dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     reservationDate.setHours(0, 0, 0, 0);
     return reservationDate < today;
   }
@@ -253,9 +296,9 @@ export class AccountComponent implements OnInit {
   }
 
   canCancel(reservation: ReservationWithCenter): boolean {
-    // Can only cancel if status is pending or confirmed, and not in the past
+    // Can only cancel if status is pending or confirmed, and not in the past (including time)
     if (reservation.status === 'cancelled') return false;
-    return !this.isReservationPast(reservation.date);
+    return !this.isReservationPast(reservation.date, reservation.hour);
   }
 
   async loadFavorites() {
@@ -320,6 +363,12 @@ export class AccountComponent implements OnInit {
       return;
     }
 
+    // Validate that the reservation time is not in the past
+    if (this.isReservationPast(this.reservationDate, this.reservationHour)) {
+      this.reservationError = 'Cannot book a reservation for a time that has already passed';
+      return;
+    }
+
     this.loading = true;
     this.reservationError = '';
 
@@ -353,6 +402,78 @@ export class AccountComponent implements OnInit {
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  // Review functionality
+  openReviewModal(reservation: ReservationWithCenter) {
+    this.reservationToReview = reservation;
+    this.showReviewModal = true;
+    this.reviewRating = 5;
+    this.reviewComment = '';
+    this.reviewError = '';
+  }
+
+  closeReviewModal() {
+    this.showReviewModal = false;
+    this.reservationToReview = null;
+    this.reviewRating = 5;
+    this.reviewComment = '';
+    this.reviewError = '';
+  }
+
+  async submitReview() {
+    if (!this.reservationToReview) return;
+
+    if (this.reviewRating < 1 || this.reviewRating > 5) {
+      this.reviewError = 'Please select a rating between 1 and 5 stars';
+      return;
+    }
+
+    this.loading = true;
+    this.reviewError = '';
+
+    try {
+      const result = await this.reviewsService.createReview({
+        centerId: this.reservationToReview.centerId,
+        reservationId: this.reservationToReview.id,
+        rating: this.reviewRating,
+        comment: this.reviewComment.trim()
+      });
+
+      if (result.success) {
+        alert('Review submitted successfully!');
+        this.reviewedReservations.add(this.reservationToReview.id);
+        this.closeReviewModal();
+      } else {
+        this.reviewError = result.error || 'Failed to submit review';
+      }
+    } catch (error) {
+      console.error('Review error:', error);
+      this.reviewError = 'An error occurred while submitting the review';
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  canReview(reservation: ReservationWithCenter): boolean {
+    // Can only review completed reservations that haven't been cancelled and haven't been reviewed yet
+    return reservation.status === 'completed' && !this.reviewedReservations.has(reservation.id);
+  }
+
+  hasReviewed(reservation: ReservationWithCenter): boolean {
+    return this.reviewedReservations.has(reservation.id);
+  }
+
+  openReviewsModal(center: Center) {
+    this.reviewsCenterId = String(center.id);
+    this.reviewsCenterName = center.name || 'Unknown Center';
+    this.showReviewsModal = true;
+  }
+
+  closeReviewsModal() {
+    this.showReviewsModal = false;
+    this.reviewsCenterId = null;
+    this.reviewsCenterName = '';
   }
 }
 

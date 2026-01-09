@@ -1,0 +1,46 @@
+<div class="modal-overlay" *ngIf="show" (click)="close()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Reviews for {{ centerName }}</h2>
+      <button class="close-btn" (click)="close()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="loading" class="loading-container">
+        <p>Loading reviews...</p>
+      </div>
+
+      <div *ngIf="!loading && reviews.length === 0" class="no-reviews">
+        <p>No reviews yet for this center.</p>
+      </div>
+
+      <div *ngIf="!loading && reviews.length > 0" class="reviews-list">
+        <div *ngFor="let review of reviews" class="review-item">
+          <div class="review-header">
+            <div class="user-info">
+              <span class="user-icon">👤</span>
+              <span class="user-name">{{ review.userName }}</span>
+            </div>
+            <div class="review-rating">
+              <span *ngFor="let star of getStarsArray(review.rating)"
+                    [class.filled]="star === 1"
+                    class="star">★</span>
+            </div>
+          </div>
+
+          <div class="review-date" *ngIf="review.createdAt">
+            {{ formatDate(review.createdAt) }}
+          </div>
+
+          <div class="review-comment" *ngIf="review.comment">
+            <p>{{ review.comment }}</p>
+          </div>
+
+          <div class="review-no-comment" *ngIf="!review.comment">
+            <p class="no-comment-text">No comment provided</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
