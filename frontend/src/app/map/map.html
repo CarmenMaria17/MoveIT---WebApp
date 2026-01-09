@@ -95,6 +95,7 @@
           type="date"
           id="reservationDate"
           [(ngModel)]="reservationDate"
+          (ngModelChange)="updateAvailableSpots()"
           [min]="getMinDate()"
           required
         />
@@ -105,6 +106,7 @@
         <select
           id="reservationHour"
           [(ngModel)]="reservationHour"
+          (ngModelChange)="updateAvailableSpots()"
           required
         >
           <option value="">Select an hour</option>
@@ -112,6 +114,14 @@
             {{ hour }}
           </option>
         </select>
+      </div>
+
+      <!-- Available Spots Display -->
+      <div *ngIf="availableSpots !== null && totalCapacity !== null" class="availability-info">
+        <span class="availability-label">Available spots:</span>
+        <span class="availability-value" [class.low-availability]="availableSpots < totalCapacity * 0.3">
+          {{ availableSpots }}/{{ totalCapacity }}
+        </span>
       </div>
 
       <div *ngIf="errorMessage" class="error-message">

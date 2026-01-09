@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-register',
@@ -16,7 +17,11 @@ export class RegisterComponent {
   confirmPassword: string = '';
   passwordMismatch: boolean = false;
 
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private notificationService: NotificationService
+  ) {}
 
   validatePasswords(): boolean {
     this.passwordMismatch = this.password !== this.confirmPassword;
@@ -26,31 +31,31 @@ export class RegisterComponent {
   async onRegister() {
     // Validate passwords match
     if (!this.validatePasswords()) {
-      alert('Passwords do not match. Please try again.');
+      this.notificationService.error('Passwords do not match. Please try again.');
       return;
     }
 
     // Basic validation
     if (!this.username || !this.email || !this.password || !this.confirmPassword) {
-      alert('Please fill in all fields.');
+      this.notificationService.warning('Please fill in all fields.');
       return;
     }
 
     if (this.password.length < 6) {
-      alert('Password must be at least 6 characters long.');
+      this.notificationService.warning('Password must be at least 6 characters long.');
       return;
     }
 
     try {
       const result = await this.authService.register(this.username, this.email, this.password);
       if (result.success) {
-        alert('Registration successful! Welcome to MoveIT.');
+        this.notificationService.success('Registration successful! Welcome to MoveIT.');
         this.router.navigate(['/home']);
       } else {
-        alert(result.error || 'Registration failed. Please try again.');
+        this.notificationService.error(result.error || 'Registration failed. Please try again.');
       }
     } catch (error) {
-      alert('An error occurred during registration. Please try again.');
+      this.notificationService.error('An error occurred during registration. Please try again.');
       console.error('Registration error:', error);
     }
   }
